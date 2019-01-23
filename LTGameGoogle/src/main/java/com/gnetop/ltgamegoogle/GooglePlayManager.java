@@ -10,7 +10,7 @@ import android.widget.Toast;
 
 import com.gnetop.ltgamecommon.impl.OnCreateOrderListener;
 import com.gnetop.ltgamecommon.impl.OnGoogleInitListener;
-import com.gnetop.ltgamecommon.impl.OnGooglePayResultListener;
+import com.gnetop.ltgamecommon.impl.OnGooglePlayResultListener;
 import com.gnetop.ltgamecommon.impl.OnGoogleResultListener;
 import com.gnetop.ltgamecommon.login.LoginBackManager;
 import com.gnetop.ltgamecommon.model.GoogleModel;
@@ -35,13 +35,13 @@ public class GooglePlayManager {
     private static String payload;
 
     /**
-     * 初始化google支付
+     * 初始化google
      */
-    public static void initGooglePay(Context context, String publicKey, final String url,
+    public static void initGooglePlay(Context context, String publicKey, final String url,
                                      final String LTAppID, final String LTAppKey,
                                      final String packageId, final Map<String, Object> params,
                                      final OnGoogleInitListener mListener) {
-        //创建谷歌支付帮助类
+        //创建谷歌帮助类
         mHelper = new IabHelper(context, publicKey);
         mHelper.enableDebugLogging(true);
         /**
@@ -70,7 +70,7 @@ public class GooglePlayManager {
      * @param mListener    回调
      */
     public static void checkUnConsume(final Context context, final int requestCode, List<String> goodsList,
-                                      final String productID, final OnGooglePayResultListener mListener) {
+                                      final String productID, final OnGooglePlayResultListener mListener) {
         try {
             List<String> subSku = new ArrayList<>();
             mHelper.queryInventoryAsync(true, goodsList, subSku,
@@ -85,7 +85,7 @@ public class GooglePlayManager {
                                             false, "Consumption success",
                                             "Consumption failed");
                                 } else {
-                                    buyProduct((Activity) context, requestCode, productID, mListener);
+                                    getProduct((Activity) context, requestCode, productID, mListener);
                                 }
                             }
                         }
@@ -97,7 +97,7 @@ public class GooglePlayManager {
     }
 
     /**
-     * 消费掉已购买商品
+     * 消费掉商品
      *
      * @param purchase
      * @param needNext
@@ -115,7 +115,7 @@ public class GooglePlayManager {
                     }
                     if (result.isSuccess()) {
                         if (!needNext) {
-                            //处理内购中断的情况, 仅仅只是消费掉上一次未正常完成的商品
+                            //处理中断的情况, 仅仅只是消费掉上一次未正常完成的商品
                             Toast.makeText(context, tipmsg1, Toast.LENGTH_SHORT).show();
                         }
                     } else {
@@ -130,15 +130,15 @@ public class GooglePlayManager {
 
 
     /**
-     * 产品购买
+     * 产品获取
      *
      * @param context      上下文
      * @param REQUEST_CODE 请求码
-     * @param SKU          内购产品唯一id, 填写你自己添加的内购商品id
+     * @param SKU          产品唯一id, 填写你自己添加的商品id
      * @param mListener    回调监听
      */
-    private static void buyProduct(final Activity context, int REQUEST_CODE,
-                                   final String SKU, final OnGooglePayResultListener mListener) {
+    private static void getProduct(final Activity context, int REQUEST_CODE,
+                                   final String SKU, final OnGooglePlayResultListener mListener) {
         if (!TextUtils.isEmpty(payload)) {
             try {
                 mHelper.launchPurchaseFlow(context, SKU, REQUEST_CODE, new IabHelper.OnIabPurchaseFinishedListener() {
@@ -146,10 +146,10 @@ public class GooglePlayManager {
                     public void onIabPurchaseFinished(IabResult result, Purchase purchase) {
                         if (result.isFailure()) {
                             Toast.makeText(context, "Purchase Failed", Toast.LENGTH_SHORT).show();
-                            mListener.onPayError(result.getMessage());
+                            mListener.onPlayError(result.getMessage());
                             return;
                         }
-                        mListener.onPaySuccess("Purchase successful");
+                        mListener.onPlaySuccess("Purchase successful");
                         if (purchase.getSku().equals(SKU)) {
                             //购买成功，调用消耗
                             consumeProduct(context, purchase, false, "Payment success",
@@ -161,7 +161,7 @@ public class GooglePlayManager {
                 e.printStackTrace();
             }
         } else {
-            mListener.onPayError("Order creation failed");
+            mListener.onPlayError("Order creation failed");
             Toast.makeText(context, "Order creation failed", Toast.LENGTH_SHORT).show();
         }
     }
@@ -251,26 +251,26 @@ public class GooglePlayManager {
                                        final String LTAppKey,
                                        Map<String, Object> params,
                                        final OnGoogleResultListener mListener) {
-        LoginBackManager.googlePay(url,
+        LoginBackManager.googlePlay(url,
                 LTAppID, LTAppKey, params
-                , new OnGooglePayResultListener() {
+                , new OnGooglePlayResultListener() {
                     @Override
-                    public void onPaySuccess(String result) {
+                    public void onPlaySuccess(String result) {
                         mListener.onResultSuccess(result);
                     }
 
                     @Override
-                    public void onPayFailed(Throwable ex) {
+                    public void onPlayFailed(Throwable ex) {
                         mListener.onResultError(ex);
                     }
 
                     @Override
-                    public void onPayComplete() {
+                    public void onPlayComplete() {
 
                     }
 
                     @Override
-                    public void onPayError(String result) {
+                    public void onPlayError(String result) {
                         mListener.onResultFailed(result);
                     }
                 });
